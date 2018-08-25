@@ -1,0 +1,69 @@
+%ecg11 contains time, ecg unfiltered, ecg filtered
+
+%peaks are all greater than 0.4 so if we just store the time/data pairs
+%where the data is above 0.4 we can find the peaks then collect samples 80
+%before the peak 170 after the peak then plot those on top of each other
+
+close all; 
+[pks,locs] = findpeaks(ecg11(:,3),ecg11(:,1),'MinPeakProminence',0.45,'Annotate','extents');
+segments = zeros(length(pks),250);
+emeandist = zeros(length(pks),1);
+
+for i = 1:length(pks)
+    j = find(ecg11(:,1) == locs(i));
+    k = j - 80;
+    segments(i, :) = ecg11(k:k+249,3);
+    segments(i, :) = segments(i, :) - mean(segments(i, :));
+%     plot(ecg11(1:250,1), ecg11(k:k+249,3))
+%     plot(ecg11(1:250,1), segments(i,:))
+    hold on;
+end
+
+%% 
+% plot(ecg11(1:250,1), mean(segments))
+% for l = 1:length(pks)
+%      emeandist(l) = norm(mean(segments) - segments(l,:));
+% end
+
+%% extracting one ecg signal
+%need to ask nick how to get the mean of all signals from above
+%with the exact same amount of samples
+%create an array and assign each pulse a column?
+% figure
+% plot(ecg11(1:(500),1),ecg11(1:(500),3))
+% title('single ecg signal')
+
+%% finding PSD
+fs=1000;
+
+int1=ecg11(1:500,3);
+PSD1= pwelch(int1,500);
+freq1=(1:length(PSD1))*(fs/length(PSD1));
+
+int2=ecg11(501:1000,3);
+PSD2= pwelch(int2,500);
+freq2=(1:length(PSD2))*(fs/length(PSD2));
+
+plot(freq1,PSD1,freq2,PSD2);
+title('PSD of two complexes of the same recording, same person')
+
+%% finding the centroid
+sum1=0;sum2=0;
+n=length(PSD1);
+while i<n
+sum1=sum1+i*PSD1(i)
+sum2=sum2+i*PSD2(i)
+i=i+1;
+end
+
+cen1=(fs/n)*(sum1/sum(PSD1))
+cen2=(fs/n)*(sum2/sum(PSD2))
+
+
+%% summary
+%I obtained the centroid for a signle PQRST complex in one recording.
+%I need to 1) get the mean with the right amount of samples of all complexes
+%from one recording of the same person 2)get the centroid for each
+%recording for one person 3) compare different centroids from different
+%recordings for one person 4) compare different centroids for different
+%people and see if that can be used as an identification measure.
